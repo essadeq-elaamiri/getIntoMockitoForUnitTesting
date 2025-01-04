@@ -11,24 +11,56 @@ This repository is a small light weight reference to get into Mockito framework 
 - Fun
 
 #### What is Unit Testing 
-- We will cover unit testing in 3 layers:
-    * Repository layer 
-    * Service layer 
-    * Controller layer 
+
+
+
+#### What is a unit of source code
+A unit of source code is the smallest part of a code that can be tested. In Java languages, this is usually a method or a class.
+
+#### What is unit testing
+- Unit testing is the process through which units of source code are tested to verify if they work properly. 
+- Performing unit tests is a way to ensure that all functionalities of an application are working as they should. 
+- Unit tests inform the developer when a change in one unit interferes with the functionality of another. 
+- Modern unit testing frameworks are typically implemented using the same code used by the system under test. 
+- This enables a developer who is writing application code in Java to write their unit tests in Java as well.
+
+#### What is mocking
+- Mocking is a process used in unit testing when the unit being tested has external dependencies. 
+- The **purpose of mocking** is __to isolate and focus on the code being tested and not on the behavior or state of external dependencies__. 
+- In `mocking`, the dependencies are replaced by closely controlled replacements objects that simulate the behavior of the real ones. 
+- There are three main possible types of replacement objects - `fakes`, `stubs` and `mocks`.
+
+**`Fakes`**: 
+- A Fake is an object that will replace the actual code by implementing the same interface but without interacting with other objects. 
+- Usually the Fake is hard-coded to return fixed results. 
+- To test for different use cases, a lot of Fakes must be introduced. 
+- The problem :x: introduced by using Fakes is that when an interface has been modified, all fakes implementing this interface should be modified as well.
+
+**`Stubs`**: 
+- A Stub is an object that will return a specific result based on a specific set of inputs and usually won’t respond to anything outside of what is programed for the test. 
+
+
+**`Mocks`**: 
+- A Mock is a much more sophisticated version of a Stub. It will still return values like a Stub, but it can also be programmed with expectations in terms of how many times each method should be called, in which order and with what data. 
+
+- More info [here](https://www.telerik.com/products/mocking/unit-testing.aspx#:~:text=The%20purpose%20of%20mocking%20is,behavior%20of%20the%20real%20ones.) and [here](https://www.j-labs.pl/en/tech-blog/mocks-stubs-and-spies-in-unit-testing-based-on-mockito/#:~:text=A%20stub%20is%20an%20object,output%2C%20independently%20from%20the%20input.).
 
 
 #### Triple A (AAA) 
-- AAA: Arrange, Act, Assert.=> How we arrange our Tests
 - Called also (BDD): Behaviour Driven Development.
-
-
-#### Start testing
 - **AAA**: Arrange, Act, Assert: A common pattern for writing tests where you set up the test data, perform the action, and then verify the results.
 1. **Arrange**: Prepare instances
 2. **Act**: Do the action to be tested
 3. **Assert**: Test the results 
 
 ![AAA](./imgs/AAA.PNG)
+
+#### Testing our project 
+
+- In our case we will cover unit testing in 3 layers:
+    * Repository layer 
+    * Service layer 
+    * Controller layer 
 
 ##### Test the Repository
 
@@ -312,7 +344,50 @@ public void PersonRepository_getPersonByFirstNameContaining_returnListPersonWith
 }
 ```
 - The test is clear, simple and passed :ok:
-- Visit code to see update and delete testing ... [link]()
+- Visit code to see update and delete testing ... [link to PersonRepositoryTest.java](https://github.com/essadeq-elaamiri/getIntoMockitoForUnitTesting/blob/main/MockitoTutorial/src/test/java/me/elaamiri/MockitoTutorial/RepositoriesTests/PersonRepositoryTest.java)
+
+
+##### Test the Service layer 
+- Before that let's talk about `mocking`.
+
+In the context of unit testing, **mocking** refers to the practice of creating simulated or "fake" objects that mimic the behavior of real objects in a controlled way. These simulated objects are called **mocks**. 
+
+Mocking is used to isolate the unit of code being tested and ensure that the test focuses solely on the logic of that unit, without relying on or being affected by external dependencies (like databases, APIs, or other classes).
+
+**Why is Mocking Used?**
+
+1. **Isolation**
+- Unit tests are meant to test a single unit of code (e.g., a method or class) in isolation.
+- Mocking allows you to replace external dependencies (e.g., databases, web services, or other classes) with mock objects, so the test doesn't rely on those dependencies.
+
+2. **Control**
+- Mock objects allow you to define specific behaviors or responses for methods, making it easier to test different scenarios (e.g., success, failure, edge cases).
+
+3. **Speed**
+- Mocking avoids the overhead of interacting with real dependencies (e.g., making network calls or querying a database), making tests faster.
+
+4. **Simplicity**
+- Mocking simplifies tests by removing the need to set up complex environments or dependencies.
+
+
+**Key Concepts in Mocking**
+
+1. **Mock Object**
+- A simulated object that mimics the behavior of a real object.
+- For example, if you're testing a service that interacts with a database, you can mock the database repository to return predefined data instead of querying a real database.
+
+2. **Stub**
+- A type of mock object that provides predefined responses to method calls.
+- For example, you can stub a method to always return a specific value or throw an exception.
+
+3. **Spy**
+- A partial mock that wraps a real object and allows you to verify interactions with it while still using its real behavior for some methods.
+
+4. **Verification**
+- Mocking frameworks often allow you to verify that specific methods were called with the expected arguments during the test.
+
+- Confused! Let's practice this shit haha :smile:
+- 
 
 
 ## Tutorial reference
