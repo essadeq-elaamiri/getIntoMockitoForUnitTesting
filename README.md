@@ -1,8 +1,12 @@
+
 # getIntoMockitoForUnitTesting
-This repository is a small light weight reference to get into Mockito framework for unit testing.
-# Intoduction 
-## Course Notes
-- There are just the notes, there will be a detailed tutorial reference after. 
+This repository is a small light weight reference to get into Mockito framework with JUnit for unit testing.
+## Intoduction 
+### Prerequirements
+- This tutorial is for purpose to discover how Mockito and JUint work, and how we use them to do our unit testing in a Spring Boot application.
+- In this tutorial we will be using Java, Spring Boot, JUnit4 and Mockito.
+- Before starting this tutorial make sure you have some experience in Java, Spring Boot and JUnit4.
+- [Here you can find a JUnit basics tutorial :link:](https://github.com/essadeq-elaamiri/get_into_junit)
 #### Why unit testing? 
 - Make sure at least 70% of your code has unit testing.
 - `Clear for take off`: Do not push your code to repository without running the unit tests and correct possible errors.
@@ -11,8 +15,6 @@ This repository is a small light weight reference to get into Mockito framework 
 - Fun
 
 #### What is Unit Testing 
-
-
 
 #### What is a unit of source code
 A unit of source code is the smallest part of a code that can be tested. In Java languages, this is usually a method or a class.
@@ -717,8 +719,341 @@ public boolean deletePersonById(long id){
 - And here are the shining green lights :chart:
 ![PersonService_deletePersonById_returnFalseWhenFindByIdThrowsException](./imgs/PersonService_deletePersonById_returnFalseWhenFindByIdThrowsException.PNG)
 
+##### Test the Controllers or Web Layer using Mockito
+- Now lets use Mockito to test our controller's methods `PersonController.java`.
+- To do that we will use **`MockMvc`**.
+-`MockMvc` is a mocked servlet environment that we can use to test our HTTP controller endpoints without the need to launch our embedded servlet container. 
+- While `MockMvc` is a mocked environment, it still comes with HTTP semantics so that we can test the serialization, HTTP status codes, and return types of our endpoints.
+- More inf [here:link:](https://codingnomads.com/java-spring-mockmvc)
+- We should add Spring web dependency first :
 
-## Tutorial reference
+```xml 
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+```
+
+- Now let's test, here is our controller:
+- PersonController.java
+```java
+
+@RestController
+@RequestMapping("api/persons")
+@AllArgsConstructor
+@NoArgsConstructor
+public class PersonController {
+    private PersonService personService;
+
+    @GetMapping("/")
+    public List<Person> getAllPersons(){
+        return personService.getAllPersons();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Person> getPerson(@PathVariable Long id){
+        return ResponseEntity.ok(personService.getPersonById(id).orElse(null));
+    }
+
+    @PostMapping("/")
+    //@ResponseStatus(HttpStatus.CREATED)
+    /*
+    @ResponseStatus is Typically Used for Void Methods:
+    It is most useful when a method does not return a ResponseEntity
+     */
+    public ResponseEntity<Person> createPerson(@RequestBody PersonDto personDto){
+        return new ResponseEntity<>(personService.createPerson(personDto), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/")
+    public ResponseEntity<Person> updatePerson(@RequestBody PersonDto personDto){
+        return new ResponseEntity<>(personService.updatePerson(personDto), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Boolean> deletePerson(@PathVariable Long id){
+        return new ResponseEntity<>(personService.deletePersonById(id), HttpStatus.OK);
+    }
+}
+```
+- Here our test class, let's explain it one by one.
+- PersonControllerTest.java 
+```java 
+
+@RunWith(MockitoJUnitRunner.class)
+public class PersonControllerTest {
+
+    private MockMvc mockMvc; // Used to simulate HTTP requests
+    @Mock
+    private PersonService personService;
+    @InjectMocks
+    private PersonController personController;
+
+    private Person person1;
+    private PersonDto personDto;
+
+    private static final String API_BASE_URL = "/api/persons";
+
+    @Before
+    public void setup(){
+        // Initialize MockMvc with the controller
+        mockMvc = MockMvcBuilders.standaloneSetup(personController).build();
+
+        person1 = Person.builder().firstName("salima").lastName("Gau").birthDate(new Date(Date.valueOf("1999-01-07").getTime())).build();
+        personDto = PersonDto.builder().firstName("salima").lastName("Gau").birthDate(new Date(Date.valueOf("1999-01-07").getTime())).build();
+    }
+
+    @Test
+    public void PersonController_getAllPersons_returnNotEmptyList() throws Exception{
+        // Mock the service Behavior
+        Mockito.when(personService.getAllPersons()).thenReturn(Lists.list(person1));
+        // Act & Assert
+        mockMvc.perform(MockMvcRequestBuilders.get(API_BASE_URL+"/"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0].firstName").value(person1.getFirstName()));
+    }
+
+    @Test
+    public void PersonController_getPerson_returnPerson() throws Exception{
+        // Arrange
+        Long id = 1L;
+        // Mock the service Behavior
+        Mockito.when(personService.getPersonById(Mockito.anyLong())).thenReturn(Optional.ofNullable(person1));
+
+        mockMvc.perform(MockMvcRequestBuilders.get(API_BASE_URL+"/"+id))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.firstName").value(person1.getFirstName()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.lastName").value("gh"));
+
+        // Test Failed
+        /*
+        Result output :
+        java.lang.AssertionError: JSON path "$.lastName"
+        Expected :gh
+        Actual   :Gau
+         */
+    }
+
+    @Test
+    public void PersonController_createPerson_returnPerson() throws Exception{
+        // Mock the service Behavior
+        Mockito.when(personService.createPerson(Mockito.any(PersonDto.class))).thenReturn(person1);
+
+        mockMvc.perform(MockMvcRequestBuilders.post(API_BASE_URL+"/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content((new ObjectMapper()).writeValueAsString(person1))) 
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.firstName").value(person1.getFirstName()));
+    }
+}
+```
+
+- **Step-by-Step Explanation**
+1. __Test Class Setup__
+`@RunWith(MockitoJUnitRunner.class)`:
+- This tells JUnit to run the test with the `MockitoJUnitRunner`, which initializes mocks and handles dependency injection.
+
+`@Mock`:
+- Creates a mock instance of `PersonService`. This allows you to simulate the behavior of the service without using its real implementation.
+
+`@InjectMocks`:
+- Injects the mocked `PersonService` into the `PersonController` instance. This ensures that the controller uses the mock service during testing.
+
+`MockMvc`:
+A Spring testing framework that allows you to simulate HTTP requests and validate responses without the need to run the container/server.
+
+2. __Setup Method__
+`@Before public void setup()`:
+- This method runs before each test. It initializes `MockMvc` with the `PersonController` instance using `MockMvcBuilders.standaloneSetup()`.
+
+`standaloneSetup()`:
+- Configures `MockMvc` to test the controller in isolation, without loading the entire Spring context.
+
+3. __Test Method__
+`@Test public void testGetAllPersons()`:
+This is the actual test method for the `getAllPersons` endpoint.
+* Arrange:
+    - Create a list of Person objects to simulate the response from the service.
+    - Use `Mockito.when(...).thenReturn(... `to mock the `getAllPersons` method of `PersonService` to return the list of persons.
+
+* Act & Assert:
+    - Use `mockMvc.perform()` to simulate a GET request to the `/api/persons/` endpoint.
+    - Use `andExpect()` to validate the response:
+        - Status Code: Verify that the response status is 200 OK.
+        - JSON Path: Use jsonPath() to validate the structure and content of the JSON response.
+
+
+- **MockMvcRequestBuilders: Simulating HTTP Requests**
+
+`MockMvcRequestBuilders` provides methods to simulate different types of HTTP requests (GET, POST, PUT, DELETE, etc.). Below is a table of commonly used methods and their descriptions:
+
+| Method                          | Description                                                                 |
+|---------------------------------|-----------------------------------------------------------------------------|
+| **`get(String url)`**           | Simulates a GET request to the specified URL.                               |
+| **`post(String url)`**          | Simulates a POST request to the specified URL.                              |
+| **`put(String url)`**           | Simulates a PUT request to the specified URL.                               |
+| **`delete(String url)`**        | Simulates a DELETE request to the specified URL.                            |
+| **`multipart(String url)`**     | Simulates a multipart request (e.g., file upload).                          |
+| **`content(String content)`**   | Sets the request body (e.g., JSON payload).                                 |
+| **`header(String name, String value)`** | Adds a header to the request.                                      |
+| **`param(String name, String value)`** | Adds a query parameter to the request.                              |
+
+- Example: Simulating a GET Request
+```java
+mockMvc.perform(MockMvcRequestBuilders.post("/api/persons/")
+       .contentType(MediaType.APPLICATION_JSON)
+       .content("{\"firstName\":\"John\",\"lastName\":\"Doe\"}"))
+       .andExpect(MockMvcResultMatchers.status().isCreated());
+```
+
+- **MockMvcResultMatchers: Validating Responses**
+
+`MockMvcResultMatchers` provides methods to validate the response. Here are some commonly used methods:
+
+| Method                                      | Description                                                                 |
+|---------------------------------------------|-----------------------------------------------------------------------------|
+| **`status().isOk()`**                       | Verifies that the response status is `200 OK`.                              |
+| **`status().isCreated()`**                  | Verifies that the response status is `201 Created`.                         |
+| **`status().isNotFound()`**                 | Verifies that the response status is `404 Not Found`.                       |
+| **`jsonPath("$.field").value(expected)`**   | Verifies the value of a JSON field in the response.                         |
+| **`header().string("name", "value")`**      | Verifies the value of a response header.                                    |
+| **`content().string("expected")`**          | Verifies the response body as a string.                                     |
+| **`content().json("{\"field\":\"value\"}")`** | Verifies the response body as JSON.                                       |
+
+
+- Example: Validating Status Code
+```java
+mockMvc.perform(MockMvcRequestBuilders.get("/api/persons/1"))
+       .andExpect(MockMvcResultMatchers.status().isOk())
+       .andExpect(MockMvcResultMatchers.jsonPath("$.firstName").value("John"))
+       .andExpect(MockMvcResultMatchers.jsonPath("$.lastName").value("Doe"));
+```
+
+- **Other Possibilities and Advanced Features**
+1. Testing Exception Handling
+Simulate exceptions in the service layer and verify that the controller returns the correct error response.
+
+```java
+@Test
+public void testGetPersonById_NotFound() throws Exception {
+    Mockito.when(personService.getPersonById(1L)).thenThrow(new PersonNotFoundException("Person not found"));
+
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/persons/1"))
+           .andExpect(MockMvcResultMatchers.status().isNotFound());
+}
+```
+
+2. Testing File Uploads
+Use `MockMvcRequestBuilders.multipart()` to simulate file uploads.
+
+```java
+@Test
+public void testFileUpload() throws Exception {
+    MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "Hello World".getBytes());
+
+    mockMvc.perform(MockMvcRequestBuilders.multipart("/api/upload")
+           .file(file))
+           .andExpect(MockMvcResultMatchers.status().isOk());
+}
+```
+
+3. Testing Security
+Use `@WithMockUser` to simulate authenticated users.
+
+```java
+@Test
+@WithMockUser(roles = "ADMIN")
+public void testAdminEndpoint() throws Exception {
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/admin"))
+           .andExpect(MockMvcResultMatchers.status().isOk());
+}
+```
+
+4. Testing Request and Response Headers
+You can test request and response headers to ensure your controller handles them correctly.
+
+```java
+@Test
+public void testHeaders() throws Exception {
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/persons/1")
+           .header("Authorization", "Bearer token")) // Add a request header
+           .andExpect(MockMvcResultMatchers.status().isOk())
+           .andExpect(MockMvcResultMatchers.header().string("Content-Type", "application/json")); // Verify response header
+}
+```
+
+5. Testing Query Parameters
+If your controller uses query parameters, you can simulate them in your tests.
+
+```java
+@Test
+public void testQueryParameters() throws Exception {
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/persons")
+           .param("firstName", "John") // Add query parameters
+           .param("lastName", "Doe"))
+           .andExpect(MockMvcResultMatchers.status().isOk());
+}
+```
+
+6. Using Argument Captors
+If you need to verify the arguments passed to a mocked method, you can use ArgumentCaptor.
+
+```java
+@Test
+public void testCreatePerson_ArgumentCaptor() throws Exception {
+    ArgumentCaptor<PersonDto> personDtoCaptor = ArgumentCaptor.forClass(PersonDto.class);
+    Person person = new Person(1L, "John", "Doe", LocalDate.parse("1990-01-01"));
+
+    Mockito.when(personService.createPerson(personDtoCaptor.capture())).thenReturn(person);
+
+    mockMvc.perform(MockMvcRequestBuilders.post("/api/persons/")
+           .contentType(MediaType.APPLICATION_JSON)
+           .content("{\"firstName\":\"John\",\"lastName\":\"Doe\"}"))
+           .andExpect(MockMvcResultMatchers.status().isCreated());
+
+    // Verify the captured argument
+    PersonDto capturedPersonDto = personDtoCaptor.getValue();
+    Assert.assertEquals("John", capturedPersonDto.getFirstName());
+    Assert.assertEquals("Doe", capturedPersonDto.getLastName());
+}
+```
+
+7. Testing Redirects
+If your controller performs redirects, you can test them using MockMvc.
+
+```java
+@Test
+public void testRedirect() throws Exception {
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/redirect"))
+           .andExpect(MockMvcResultMatchers.status().is3xxRedirection())
+           .andExpect(MockMvcResultMatchers.redirectedUrl("/api/persons/1"));
+}
+```
+
+8. Using Custom Matchers
+If you need to perform complex validations, you can create custom matchers.
+
+```java
+@Test
+public void testCustomMatcher() throws Exception {
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/persons/1"))
+           .andExpect(MockMvcResultMatchers.content().string(new CustomMatcher<String>() {
+               @Override
+               public void describeTo(Description description) {
+                   description.appendText("Expected a JSON object with firstName=John");
+               }
+
+               @Override
+               protected boolean matchesSafely(String item) {
+                   return item.contains("\"firstName\":\"John\"");
+               }
+           }));
+}
+```
+
+--> DONE 05/01/2025 11:39
+## Tutorial references
 - https://stackoverflow.com/questions/155436/unit-test-naming-best-practices 
 - https://osherove.com/blog/2005/4/3/naming-standards-for-unit-tests.html
 - https://howtodoinjava.com/mockito/junit-mockito-example/ 

@@ -58,7 +58,6 @@ public class PersonServiceTest {
     public void PersonService_getPersonById_2_returnPerson(){
        // Alternative approach: Mock the Person object directly instead of using a real Person object.
         Person personMock = Mockito.mock(Person.class); //Create a mocked Person object to simulate its behavior.
-        System.out.println(personMock);
         Mockito.when(personRepository.findById(personMock.getId())).thenReturn(Optional.of(personMock));
         Person retrievedPerson = personService.getPersonById(personMock.getId()).get();
         Assertions.assertThat(retrievedPerson).isNotNull().isEqualTo(personMock);
