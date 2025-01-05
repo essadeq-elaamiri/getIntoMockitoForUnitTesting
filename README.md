@@ -1080,6 +1080,7 @@ public void testCustomMatcher() throws Exception {
 
 --> DONE 05/01/2025 11:39
 ##  7. <a name='Tutorialreferences'></a>Tutorial references
+- Mockito Docs: https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html 
 - https://stackoverflow.com/questions/155436/unit-test-naming-best-practices 
 - https://osherove.com/blog/2005/4/3/naming-standards-for-unit-tests.html
 - https://howtodoinjava.com/mockito/junit-mockito-example/ 
