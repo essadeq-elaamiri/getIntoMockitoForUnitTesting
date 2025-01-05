@@ -1,7 +1,6 @@
-package me.elaamiri.MockitoTutorial.RepositoriesTests;
+package me.elaamiri.MockitoTutorial.repositories;
 
 import me.elaamiri.MockitoTutorial.entities.Person;
-import me.elaamiri.MockitoTutorial.repositories.PersonRepository;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Lists;
 import org.junit.Test;

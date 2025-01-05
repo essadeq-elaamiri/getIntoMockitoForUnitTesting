@@ -14,7 +14,6 @@ import java.util.Date;
 @Builder
 @Data
 public class Person {
-
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     Long id;
@@ -22,4 +21,8 @@ public class Person {
     String lastName;
     @Temporal(TemporalType.DATE)
     Date birthDate;
+    @Temporal(TemporalType.DATE)
+    Date creationDate;
+    @Temporal(TemporalType.DATE)
+    Date lastModificationDate;
 }

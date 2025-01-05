@@ -344,10 +344,10 @@ public void PersonRepository_getPersonByFirstNameContaining_returnListPersonWith
 }
 ```
 - The test is clear, simple and passed :ok:
-- Visit code to see update and delete testing ... [link to PersonRepositoryTest.java](https://github.com/essadeq-elaamiri/getIntoMockitoForUnitTesting/blob/main/MockitoTutorial/src/test/java/me/elaamiri/MockitoTutorial/RepositoriesTests/PersonRepositoryTest.java)
+- Visit code to see update and delete testing ... [link to PersonRepositoryTest.java](https://github.com/essadeq-elaamiri/getIntoMockitoForUnitTesting/blob/main/MockitoTutorial/src/test/java/me/elaamiri/MockitoTutorial/repositories/PersonRepositoryTest.java)
 
 
-##### Test the Service layer 
+##### Test the Service layer using Mockito
 - Before that let's talk about `mocking`.
 
 In the context of unit testing, **mocking** refers to the practice of creating simulated or "fake" objects that mimic the behavior of real objects in a controlled way. These simulated objects are called **mocks**. 
@@ -387,9 +387,338 @@ Mocking is used to isolate the unit of code being tested and ensure that the tes
 - Mocking frameworks often allow you to verify that specific methods were called with the expected arguments during the test.
 
 - Confused! Let's practice this shit haha :smile:
-- 
+- Let's use Mockito to test the Service layer, here is the code, and we will explain it all...
+- But before here are the Entity, the Dto and the Service as a reference.
+
+<details>
+<summary>
+__Person.java, PersonDTO.java, PersonService.java__
+</summary>
+
+- Person.java
+
+```java
+@Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Data
+public class Person {
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    Long id;
+    String firstName;
+    String lastName;
+    @Temporal(TemporalType.DATE)
+    Date birthDate;
+    @Temporal(TemporalType.DATE)
+    Date creationDate;
+    @Temporal(TemporalType.DATE)
+    Date lastModificationDate;
+}
+```
+
+- PersonDTO.java
+```java 
+@Data @Builder
+public class PersonDto {
+    Long id;
+    String firstName;
+    String lastName;
+    Date birthDate;
+    Date creationDate;
+
+}
+```
+
+- PersonService.java
+```java 
+@Service
+@AllArgsConstructor @NoArgsConstructor
+@Slf4j
+public class PersonService {
+    PersonRepository personRepository;
+
+    public Optional<Person> getPersonById(long id){
+        log.info("Get Person By Id | {}", id);
+        return personRepository.findById(id);
+    }
+
+    public List<Person> getAllPersons(){
+        log.info("Get All Persons ");
+        return personRepository.findAll();
+    }
+
+    public Person createPerson(PersonDto person){
+        log.info("create Person | {}", person.getFirstName());
+        Person personToCreate= Person.builder().firstName(person.getFirstName())
+                .lastName(person.getLastName())
+                .birthDate(person.getBirthDate())
+                .creationDate(new Date())
+                .lastModificationDate(new Date()).build();
+        return personRepository.save(personToCreate);
+    }
+
+    public Person updatePerson(PersonDto person){
+        log.info("update Person | {}", person.getFirstName());
+        if(Objects.isNull(person.getId())){
+            log.error("You are trying to edit a person with no id. Name:{}", person.getFirstName());
+            return null;
+        }
+        Person retrieved = personRepository.findById(person.getId()).orElse(null);
+        if(Objects.isNull(retrieved)){
+            log.error("No person with this id. ID:{}", person.getId());
+            return null;
+        }
+
+        retrieved.setFirstName(person.getFirstName());
+        retrieved.setLastName(person.getLastName());
+        retrieved.setBirthDate(person.getBirthDate());
+        retrieved.setCreationDate(person.getCreationDate());
+        retrieved.setLastModificationDate(new Date());
+
+        return personRepository.save(retrieved);
+    }
+
+    public boolean deletePersonById(long id){
+        log.info("delete Person | ID:{}", id);
+        Person retrieved = personRepository.findById(id).orElse(null);
+        if(Objects.isNull(retrieved)){
+            log.error("No person with this id. ID:{}", id);
+            return false;
+        }
+        personRepository.deleteById(id);
+        return true;
+    }
+}
+```
+
+</details>
+
+- PersonServiceTest.java
+```java 
+//@ExtendWith(MockitoExtension.class)
+@RunWith(MockitoJUnitRunner.class) // Resolved NullPointerException In @Mock objects
+public class PersonServiceTest {
+
+    @Mock
+    private PersonRepository personRepository;  // I dont want the real behavior of the repo, so I mock it
+
+    @InjectMocks // Assuming PersonService uses PersonRepository
+    private PersonService personService;
+
+    @Test
+    public void PersonService_createPerson_returnPerson(){
+        Person person1 = Person.builder().firstName("salima").lastName("Gau").birthDate(new Date(Date.valueOf("1999-01-07").getTime())).build();
+        PersonDto personDto = PersonDto.builder().firstName("salima").lastName("Gau").birthDate(new Date(Date.valueOf("1999-01-07").getTime())).build();
+        // Apply mock: telling to Mockito, when personRepository.save() call on any Person object, return the specific object
+        // So we mock the real behavior of the repo by this
+        Mockito.when(personRepository.save(Mockito.any(Person.class))).thenReturn(person1);
+        // Now we will test the service without touching the real behavior of the Repository
+        Person created = personService.createPerson(personDto);
+
+        Assertions.assertThat(created).isNotNull();
+        Assertions.assertThat(created.getFirstName()).isEqualTo(person1.getFirstName());
+
+    }
+
+    @Test
+    public void PersonService_getPersonById_returnPerson(){
+        Person person1 = Person.builder().id(550L).firstName("salima").lastName("Gau").birthDate(new Date(Date.valueOf("1999-01-07").getTime())).build();
+        PersonDto personDto = PersonDto.builder().id(550L).firstName("salima").lastName("Gau").birthDate(new Date(Date.valueOf("1999-01-07").getTime())).build();
+        Mockito.when(personRepository.save(Mockito.any(Person.class))).thenReturn(person1);
+        Person saved = personService.createPerson(personDto);
+        Mockito.when(personRepository.findById(person1.getId())).thenReturn(Optional.of(person1));
+        Person retrieved = personService.getPersonById(person1.getId()).get();
+        Assertions.assertThat(retrieved).isNotNull().isEqualTo(person1);
+        
+    }
+
+    @Test
+    public void PersonService_getPersonById_2_returnPerson(){
+       // Alternative approach: Mock the Person object directly instead of using a real Person object.
+        Person personMock = Mockito.mock(Person.class); //Create a mocked Person object to simulate its behavior.
+        System.out.println(personMock);
+        Mockito.when(personRepository.findById(personMock.getId())).thenReturn(Optional.of(personMock));
+        Person retrievedPerson = personService.getPersonById(personMock.getId()).get();
+        Assertions.assertThat(retrievedPerson).isNotNull().isEqualTo(personMock);
+        // So we tested the service getPersonById method without problems with the repo
+    }
+}
+```
+- **Explanation of the Code**
+
+This code is a unit test class for a `PersonService` using **Mockito** and **JUnit**. The purpose of this test is to verify the behavior of the `PersonService` methods without relying on the actual implementation of the `PersonRepository`. Instead, the repository is mocked to simulate its behavior.
+
+- Key Annotations and Their Purpose
+
+1. **`@RunWith(MockitoJUnitRunner.class)`**  
+   This annotation tells JUnit to run the test with the `MockitoJUnitRunner`, which initializes mocks and handles dependency injection.  
+   - **Note**: You have both `@ExtendWith(MockitoExtension.class)` (for JUnit 5) and `@RunWith(MockitoJUnitRunner.class)` (for JUnit 4) in the code. These are for different versions of JUnit. You should use only one depending on your JUnit version:
+     - Use `@ExtendWith(MockitoExtension.class)` for JUnit 5.
+     - Use `@RunWith(MockitoJUnitRunner.class)` for JUnit 4.
+
+2. **`@Mock`**  
+   This annotation creates a mock instance of `PersonRepository`. Mocks are used to simulate the behavior of dependencies without invoking their actual implementation.
+
+3. **`@InjectMocks`**  
+   This annotation injects the mocked `PersonRepository` into the `PersonService` instance. It assumes that `PersonService` has a dependency on `PersonRepository`.
+
+-  Test Methods
+
+1. **`PersonService_createPerson_returnPerson`**
+   - **Purpose**: Tests the `createPerson` method of `PersonService`.
+   - **Steps**:
+     1. Creates a `Person` and `PersonDto` object with sample data.
+     2. Mocks the `save` method of `PersonRepository` to return the `Person` object when called.
+     3. Calls the `createPerson` method of `PersonService` and verifies that the returned `Person` object is not null and matches the expected data.
+
+2. **`PersonService_getPersonById_returnPerson`**
+   - **Purpose**: Tests the `getPersonById` method of `PersonService`.
+   - **Steps**:
+     1. Creates a `Person` object with sample data.
+     2. Mocks the `save` method of `PersonRepository` to return the `Person` object when called. 
+     3. Mocks the `findById` method of `PersonRepository` to return the `Person` object when called with the specific ID.
+     4. Calls the `getPersonById` method of `PersonService` and verifies that the returned `Person` object matches the expected data.
+     5. Demonstrates an alternative approach using a mocked `Person` object instead of creating a real one.
+
+3. **`PersonService_getPersonById_2_returnPerson`**
+   - **Purpose**: Tests the `getPersonById` method of `PersonService` using a mocked `Person` object.
+   - **Steps**:
+     1. Creates a mocked `Person` object.
+     2. Mocks the `findById` method of `PersonRepository` to return the mocked `Person` object when called with the specific ID.
+     3. Calls the `getPersonById` method of `PersonService` and verifies that the returned `Person` object matches the mocked object.
+
+###### More Mocking Scenarios and Examples
+1. **Mocking Void Methods**
+- Void methods don’t return a value, but you can still mock their behavior using `doNothing()`, `doThrow()`, or `doAnswer()`.
+
+```java 
+@Test
+    public void PersonService_deletePersonById_returnTrueIfDeleted(){
+        // Mock the delete method to do nothing
+        Mockito.doNothing().when(personRepository).deleteById(Mockito.anyLong());
+        // Call the method under test
+        boolean deleted = personService.deletePersonById(1L);
+        // Verify the method was called 1 time
+        Mockito.verify(personRepository, Mockito.times(1)).deleteById(1L);
+        // Verify the return is true
+        Assertions.assertThat(deleted).isTrue();
+    }
+```
+- Watch the result the test Failed :x:
+
+![test_deleteçperson](./imgs/test_deleteçperson.PNG)
+
+- It says wanted but not called, but why ? :smile: It's because of this condition in the service method : 
+
+```java
+public boolean deletePersonById(long id){
+    log.info("delete Person | ID:{}", id);
+    Person retrieved = personRepository.findById(id).orElse(null);
+    if(Objects.isNull(retrieved)){
+        log.error("No person with this id. ID:{}", id);
+        return false;
+    }
+    personRepository.deleteById(id);
+    return true;
+}
+```
+- The passed id does not return a Person, so we need to mock `personRepository.findById` also.
+- Here is the new test 
+
+```java
+@Test
+public void PersonService_deletePersonById_returnTrueIfDeleted(){
+    Person personMock = Mockito.mock(Person.class);
+
+    Mockito.doReturn(Optional.of(personMock)).when(personRepository).findById(1L);
+    // Mock the delete method to do nothing
+    Mockito.doNothing().when(personRepository).deleteById(Mockito.anyLong());
+    // Call the method under test
+    boolean deleted = personService.deletePersonById(1L);
+    // Verify the method was called 1 time
+    Mockito.verify(personRepository, Mockito.times(1)).deleteById(1L);
+    // Verify the return is true
+    Assertions.assertThat(deleted).isTrue();
+}
+```
+- Now tests passes :v:
+- We mocked the `personRepository.findById` to return the optional of the mocked Person object.
+
+2. **Mocking Methods with Exceptions**
+- We can simulate exceptions to test error handling in your code.
+- Let's for example simulate that `personRepository.deleteById()` returns an exception when updating a Person via `personService.deletePersonById()`.
+
+```java
+@Test
+public void PersonService_deletePersonById_deleteByIdThrowsException(){
+    Person personMock = Mockito.mock(Person.class);
+
+    Mockito.doReturn(Optional.of(personMock)).when(personRepository).findById(1L);
+    // Mock the findById method to throw an exception
+    //Mockito.when(personRepository.deleteById(1L)).thenThrow(new RuntimeException("Database error")); // Does not work because deleteById return nothing its void
+    Mockito.doThrow(new RuntimeException("Database error")).when(personRepository).deleteById(1L);
+    // Verify that the exception is thrown
+    Assertions.assertThatThrownBy(()-> personService.deletePersonById(1L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Database error");
+    
+}
+```
+- Other exmple here to exception handling in `personService.deletePersonById()`.
+- We will mock the findById method to throw an exception, and verify that the service deletePersonById returns false.
+
+```java 
+@Test
+    public void PersonService_deletePersonById_returnFalseWhenFindByIdThrowsException(){
+    Person personMock = Mockito.mock(Person.class);
+    Mockito.doReturn(Optional.of(personMock)).when(personRepository).findById(1L);
+    // Mock the findById method to throw an exception
+    //Mockito.when(personRepository.deleteById(1L)).thenThrow(new RuntimeException("Database error")); // Does not work because deleteById return nothing its void
+    Mockito.doThrow(new RuntimeException("Database error")).when(personRepository).deleteById(1L);
+    // Verify
+    Assertions.assertThat(personService.deletePersonById(1L)).isFalse();
+}
+```
+- Here our `personService.deletePersonById()`, without handling:
+```java 
+public boolean deletePersonById(long id){
+    log.info("delete Person | ID:{}", id);
+    Person retrieved = personRepository.findById(id).orElse(null);
+    if(Objects.isNull(retrieved)){
+        log.error("No person with this id. ID:{}", id);
+        return false;
+    }
+    personRepository.deleteById(id);
+    return true;
+}
+```
+- And test result Failed :x: as expected.
+
+- Here our `personService.deletePersonById()`, after Excetion handling:
+```java 
+public boolean deletePersonById(long id){
+    log.info("delete Person | ID:{}", id);
+    Person retrieved = personRepository.findById(id).orElse(null);
+    if(Objects.isNull(retrieved)){
+        log.error("No person with this id. ID:{}", id);
+        return false;
+    }
+    try{personRepository.deleteById(id);}
+    catch (Exception exception){
+        log.error("Can not delete person. ID:{}", id);
+        log.error("Exception |{}", exception.getMessage());
+        return false;
+    }
+    return true;
+}
+```
+- And here are the shining green lights :chart:
+![PersonService_deletePersonById_returnFalseWhenFindByIdThrowsException](./imgs/PersonService_deletePersonById_returnFalseWhenFindByIdThrowsException.PNG)
 
 
 ## Tutorial reference
 - https://stackoverflow.com/questions/155436/unit-test-naming-best-practices 
 - https://osherove.com/blog/2005/4/3/naming-standards-for-unit-tests.html
+- https://howtodoinjava.com/mockito/junit-mockito-example/ 
