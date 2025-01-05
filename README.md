@@ -1,32 +1,57 @@
+<!-- vscode-markdown-toc -->
+* 1. [Prerequirements](#Prerequirements)
+* 2. [Why unit testing?](#Whyunittesting)
+* 3. [What is Unit Testing](#WhatisUnitTesting)
+	* 3.1. [What is a unit of source code](#Whatisaunitofsourcecode)
+	* 3.2. [What is unit testing](#Whatisunittesting)
+	* 3.3. [What is mocking](#Whatismocking)
+	* 3.4. [Triple A (AAA)](#TripleAAAA)
+* 4. [Test the Repository](#TesttheRepository)
+	* 4.1. [Unit Tests naming conventions & best practices](#UnitTestsnamingconventionsbestpractices)
+* 5. [Test the Service layer using Mockito](#TesttheServicelayerusingMockito)
+	* 5.1. [Why is Mocking Used](#WhyisMockingUsed)
+	* 5.2. [Key Concepts in Mocking](#KeyConceptsinMocking)
+	* 5.3. [More Mocking Scenarios and Examples](#MoreMockingScenariosandExamples)
+* 6. [Test the Controllers or Web Layer using Mockito](#TesttheControllersorWebLayerusingMockito)
+	* 6.1. [MockMvc](#MockMvc)
+	* 6.2. [MockMvcRequestBuilders: Simulating HTTP Requests](#MockMvcRequestBuilders:SimulatingHTTPRequests)
+	* 6.3. [MockMvcResultMatchers: Validating Responses](#MockMvcResultMatchers:ValidatingResponses)
+	* 6.4. [Other Possibilities and Advanced Features](#OtherPossibilitiesandAdvancedFeatures)
+* 7. [Tutorial references](#Tutorialreferences)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
 
 # getIntoMockitoForUnitTesting
 This repository is a small light weight reference to get into Mockito framework with JUnit for unit testing.
-## Intoduction 
-### Prerequirements
+##  1. <a name='Prerequirements'></a>Prerequirements
 - This tutorial is for purpose to discover how Mockito and JUint work, and how we use them to do our unit testing in a Spring Boot application.
 - In this tutorial we will be using Java, Spring Boot, JUnit4 and Mockito.
 - Before starting this tutorial make sure you have some experience in Java, Spring Boot and JUnit4.
 - [Here you can find a JUnit basics tutorial :link:](https://github.com/essadeq-elaamiri/get_into_junit)
-#### Why unit testing? 
+##  2. <a name='Whyunittesting'></a>Why unit testing? 
 - Make sure at least 70% of your code has unit testing.
 - `Clear for take off`: Do not push your code to repository without running the unit tests and correct possible errors.
 - Prevents Bugs.
 - Helps you think about your code.
 - Fun
 
-#### What is Unit Testing 
+##  3. <a name='WhatisUnitTesting'></a>What is Unit Testing 
 
-#### What is a unit of source code
+###  3.1. <a name='Whatisaunitofsourcecode'></a>What is a unit of source code
 A unit of source code is the smallest part of a code that can be tested. In Java languages, this is usually a method or a class.
 
-#### What is unit testing
+###  3.2. <a name='Whatisunittesting'></a>What is unit testing
 - Unit testing is the process through which units of source code are tested to verify if they work properly. 
 - Performing unit tests is a way to ensure that all functionalities of an application are working as they should. 
 - Unit tests inform the developer when a change in one unit interferes with the functionality of another. 
 - Modern unit testing frameworks are typically implemented using the same code used by the system under test. 
 - This enables a developer who is writing application code in Java to write their unit tests in Java as well.
 
-#### What is mocking
+###  3.3. <a name='Whatismocking'></a>What is mocking
 - Mocking is a process used in unit testing when the unit being tested has external dependencies. 
 - The **purpose of mocking** is __to isolate and focus on the code being tested and not on the behavior or state of external dependencies__. 
 - In `mocking`, the dependencies are replaced by closely controlled replacements objects that simulate the behavior of the real ones. 
@@ -48,7 +73,7 @@ A unit of source code is the smallest part of a code that can be tested. In Java
 - More info [here](https://www.telerik.com/products/mocking/unit-testing.aspx#:~:text=The%20purpose%20of%20mocking%20is,behavior%20of%20the%20real%20ones.) and [here](https://www.j-labs.pl/en/tech-blog/mocks-stubs-and-spies-in-unit-testing-based-on-mockito/#:~:text=A%20stub%20is%20an%20object,output%2C%20independently%20from%20the%20input.).
 
 
-#### Triple A (AAA) 
+###  3.4. <a name='TripleAAAA'></a>Triple A (AAA) 
 - Called also (BDD): Behaviour Driven Development.
 - **AAA**: Arrange, Act, Assert: A common pattern for writing tests where you set up the test data, perform the action, and then verify the results.
 1. **Arrange**: Prepare instances
@@ -57,14 +82,14 @@ A unit of source code is the smallest part of a code that can be tested. In Java
 
 ![AAA](./imgs/AAA.PNG)
 
-#### Testing our project 
+# Testing our project 
 
 - In our case we will cover unit testing in 3 layers:
     * Repository layer 
     * Service layer 
     * Controller layer 
 
-##### Test the Repository
+##  4. <a name='TesttheRepository'></a>Test the Repository
 
 - As contxt We have the entity Person and it's Repository PersonRepository and we want to test it.
 
@@ -234,7 +259,7 @@ This annotation marks the method as a test case that JUnit will run.
 - `assertThat(savedPerson.getId()).isPositive();`: Checks that the ID of the saved `Person` is a positive number (indicating that it was successfully generated by the database).
 - `assertThat(savedPerson.getFirstName()).isEqualTo(person.getFirstName());`: Checks that the first name of the saved `Person` matches the first name we set initially.
 
-- **Unit Tests naming conventions & best practices**:
+###  4.1. <a name='UnitTestsnamingconventionsbestpractices'></a>Unit Tests naming conventions & best practices
 > 1. The test name should describe what we want to test.For exmaple we used `PersonRepository_saveAll_returnSavedPerson` for our method, to indicate that we are testing the save method of the repo. respecting [Roy Osherove's naming strategy](https://osherove.com/blog/2005/4/3/naming-standards-for-unit-tests.html):
 > **` [UnitOfWork_StateUnderTest_ExpectedBehavior]`** 
 > For the classes, it's convenient to use the name of the tested class with `Test` or `Tests` as sufix (use the same for all test classes).
@@ -349,14 +374,14 @@ public void PersonRepository_getPersonByFirstNameContaining_returnListPersonWith
 - Visit code to see update and delete testing ... [link to PersonRepositoryTest.java](https://github.com/essadeq-elaamiri/getIntoMockitoForUnitTesting/blob/main/MockitoTutorial/src/test/java/me/elaamiri/MockitoTutorial/repositories/PersonRepositoryTest.java)
 
 
-##### Test the Service layer using Mockito
+##  5. <a name='TesttheServicelayerusingMockito'></a>Test the Service layer using Mockito
 - Before that let's talk about `mocking`.
 
 In the context of unit testing, **mocking** refers to the practice of creating simulated or "fake" objects that mimic the behavior of real objects in a controlled way. These simulated objects are called **mocks**. 
 
 Mocking is used to isolate the unit of code being tested and ensure that the test focuses solely on the logic of that unit, without relying on or being affected by external dependencies (like databases, APIs, or other classes).
 
-**Why is Mocking Used?**
+###  5.1. <a name='WhyisMockingUsed'></a>Why is Mocking Used
 
 1. **Isolation**
 - Unit tests are meant to test a single unit of code (e.g., a method or class) in isolation.
@@ -372,7 +397,7 @@ Mocking is used to isolate the unit of code being tested and ensure that the tes
 - Mocking simplifies tests by removing the need to set up complex environments or dependencies.
 
 
-**Key Concepts in Mocking**
+###  5.2. <a name='KeyConceptsinMocking'></a>Key Concepts in Mocking
 
 1. **Mock Object**
 - A simulated object that mimics the behavior of a real object.
@@ -591,7 +616,7 @@ This code is a unit test class for a `PersonService` using **Mockito** and **JUn
      2. Mocks the `findById` method of `PersonRepository` to return the mocked `Person` object when called with the specific ID.
      3. Calls the `getPersonById` method of `PersonService` and verifies that the returned `Person` object matches the mocked object.
 
-###### More Mocking Scenarios and Examples
+###  5.3. <a name='MoreMockingScenariosandExamples'></a>More Mocking Scenarios and Examples
 1. **Mocking Void Methods**
 - Void methods don’t return a value, but you can still mock their behavior using `doNothing()`, `doThrow()`, or `doAnswer()`.
 
@@ -719,9 +744,10 @@ public boolean deletePersonById(long id){
 - And here are the shining green lights :chart:
 ![PersonService_deletePersonById_returnFalseWhenFindByIdThrowsException](./imgs/PersonService_deletePersonById_returnFalseWhenFindByIdThrowsException.PNG)
 
-##### Test the Controllers or Web Layer using Mockito
+##  6. <a name='TesttheControllersorWebLayerusingMockito'></a>Test the Controllers or Web Layer using Mockito
 - Now lets use Mockito to test our controller's methods `PersonController.java`.
 - To do that we will use **`MockMvc`**.
+###  6.1. <a name='MockMvc'></a>MockMvc
 -`MockMvc` is a mocked servlet environment that we can use to test our HTTP controller endpoints without the need to launch our embedded servlet container. 
 - While `MockMvc` is a mocked environment, it still comes with HTTP semantics so that we can test the serialization, HTTP status codes, and return types of our endpoints.
 - More inf [here:link:](https://codingnomads.com/java-spring-mockmvc)
@@ -884,7 +910,7 @@ This is the actual test method for the `getAllPersons` endpoint.
         - JSON Path: Use jsonPath() to validate the structure and content of the JSON response.
 
 
-- **MockMvcRequestBuilders: Simulating HTTP Requests**
+###  6.2. <a name='MockMvcRequestBuilders:SimulatingHTTPRequests'></a>MockMvcRequestBuilders: Simulating HTTP Requests
 
 `MockMvcRequestBuilders` provides methods to simulate different types of HTTP requests (GET, POST, PUT, DELETE, etc.). Below is a table of commonly used methods and their descriptions:
 
@@ -907,7 +933,7 @@ mockMvc.perform(MockMvcRequestBuilders.post("/api/persons/")
        .andExpect(MockMvcResultMatchers.status().isCreated());
 ```
 
-- **MockMvcResultMatchers: Validating Responses**
+###  6.3. <a name='MockMvcResultMatchers:ValidatingResponses'></a>MockMvcResultMatchers: Validating Responses
 
 `MockMvcResultMatchers` provides methods to validate the response. Here are some commonly used methods:
 
@@ -930,7 +956,7 @@ mockMvc.perform(MockMvcRequestBuilders.get("/api/persons/1"))
        .andExpect(MockMvcResultMatchers.jsonPath("$.lastName").value("Doe"));
 ```
 
-- **Other Possibilities and Advanced Features**
+###  6.4. <a name='OtherPossibilitiesandAdvancedFeatures'></a>Other Possibilities and Advanced Features
 1. Testing Exception Handling
 Simulate exceptions in the service layer and verify that the controller returns the correct error response.
 
@@ -1053,7 +1079,7 @@ public void testCustomMatcher() throws Exception {
 ```
 
 --> DONE 05/01/2025 11:39
-## Tutorial references
+##  7. <a name='Tutorialreferences'></a>Tutorial references
 - https://stackoverflow.com/questions/155436/unit-test-naming-best-practices 
 - https://osherove.com/blog/2005/4/3/naming-standards-for-unit-tests.html
 - https://howtodoinjava.com/mockito/junit-mockito-example/ 
